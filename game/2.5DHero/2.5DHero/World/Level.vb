@@ -656,8 +656,8 @@ Public Class Level
 
         Me.StartOffsetMapUpdate()
 
-        Me._backdropRenderer = New BackdropRenderer()
-        Me._backdropRenderer.Initialize()
+        'Me._backdropRenderer = New BackdropRenderer()
+        'Me._backdropRenderer.Initialize()
     End Sub
 
     ''' <summary>
@@ -718,7 +718,7 @@ Public Class Level
     ''' Renders the level.
     ''' </summary>
     Public Sub Draw()
-        Me._backdropRenderer.Draw()
+        'Me._backdropRenderer.Draw()
 
         'Set the effect's View and Projection matrices.
         Screen.Effect.View = Screen.Camera.View
@@ -758,7 +758,7 @@ Public Class Level
     ''' Updates the level's logic.
     ''' </summary>
     Public Sub Update()
-        Me._backdropRenderer.Update()
+        'Me._backdropRenderer.Update()
 
         Me.UpdatePlayerWarp()
         Me._pokemonEncounter.TriggerBattle()
