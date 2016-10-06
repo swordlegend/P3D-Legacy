@@ -8,43 +8,47 @@ Public Class TextureManager
 
     Public Shared TextureList As New Dictionary(Of String, Texture2D)
     Public Shared TextureRectList As New Dictionary(Of KeyValuePair(Of Int32, Rectangle), Texture2D)
+    Private Shared lock As Object = New Object()
+
 
     ''' <summary>
     ''' Returns a texture.
     ''' </summary>
     ''' <param name="Name">The name of the texture.</param>
     Public Shared Function GetTexture(ByVal Name As String) As Texture2D
-        Dim cContent As ContentManager = ContentPackManager.GetContentManager(Name, ".xnb,.png")
+        SyncLock lock
+            Dim cContent As ContentManager = ContentPackManager.GetContentManager(Name, ".xnb,.png")
 
-        Dim tKey As String = cContent.RootDirectory & "\" & Name & ",FULL_IMAGE"
+            Dim tKey As String = cContent.RootDirectory & "\" & Name & ",FULL_IMAGE"
 
-        If TextureList.ContainsKey(tKey) = False Then
-            Dim t As Texture2D = Nothing
+            If TextureList.ContainsKey(tKey) = False Then
+                Dim t As Texture2D = Nothing
 
-            If System.IO.File.Exists(GameController.GamePath & "\" & cContent.RootDirectory & "\" & Name & ".xnb") = False Then
-                If System.IO.File.Exists(GameController.GamePath & "\" & cContent.RootDirectory & "\" & Name & ".png") = True Then
-                    Using stream As System.IO.Stream = System.IO.File.Open(GameController.GamePath & "\" & cContent.RootDirectory & "\" & Name & ".png", IO.FileMode.OpenOrCreate)
-                        Try
-                            t = Texture2D.FromStream(Core.GraphicsDevice, stream)
-                        Catch ex As Exception
-                            Logger.Log(Logger.LogTypes.ErrorMessage, "Something went wrong while XNA tried to load a texture. Return default.")
-                            Return DefaultTexture
-                        End Try
-                    End Using
+                If System.IO.File.Exists(GameController.GamePath & "\" & cContent.RootDirectory & "\" & Name & ".xnb") = False Then
+                    If System.IO.File.Exists(GameController.GamePath & "\" & cContent.RootDirectory & "\" & Name & ".png") = True Then
+                        Using stream As System.IO.Stream = System.IO.File.Open(GameController.GamePath & "\" & cContent.RootDirectory & "\" & Name & ".png", IO.FileMode.OpenOrCreate)
+                            Try
+                                t = Texture2D.FromStream(Core.GraphicsDevice, stream)
+                            Catch ex As Exception
+                                Logger.Log(Logger.LogTypes.ErrorMessage, "Something went wrong while XNA tried to load a texture. Return default.")
+                                Return DefaultTexture
+                            End Try
+                        End Using
+                    Else
+                        Logger.Log(Logger.LogTypes.ErrorMessage, "Texures.vb: Texture """ & GameController.GamePath & "\" & cContent.RootDirectory & "\" & Name & """ was not found!")
+                        Return DefaultTexture
+                    End If
                 Else
-                    Logger.Log(Logger.LogTypes.ErrorMessage, "Texures.vb: Texture """ & GameController.GamePath & "\" & cContent.RootDirectory & "\" & Name & """ was not found!")
-                    Return DefaultTexture
+                    t = cContent.Load(Of Texture2D)(Name)
                 End If
-            Else
-                t = cContent.Load(Of Texture2D)(Name)
+
+                TextureList.Add(tKey, ApplyEffect(TextureRectangle(t, New Rectangle(0, 0, t.Width, t.Height), 1)))
+
+                cContent.Unload()
             End If
 
-            TextureList.Add(tKey, ApplyEffect(TextureRectangle(t, New Rectangle(0, 0, t.Width, t.Height), 1)))
-
-            cContent.Unload()
-        End If
-
-        Return TextureList(tKey)
+            Return TextureList(tKey)
+        End SyncLock
     End Function
 
     Private Shared Function ApplyEffect(ByVal t As Texture2D) As Texture2D
@@ -73,51 +77,53 @@ Public Class TextureManager
     ''' <param name="r">The rectangle to get the texture from.</param>
     ''' <param name="TexturePath">The texturepath to load a texture from.</param>
     Public Shared Function GetTexture(ByVal Name As String, ByVal r As Rectangle, ByVal TexturePath As String) As Texture2D
-        Dim tSource As TextureSource = ContentPackManager.GetTextureReplacement(TexturePath & Name, r)
+        SyncLock lock
+            Dim tSource As TextureSource = ContentPackManager.GetTextureReplacement(TexturePath & Name, r)
 
-        Dim cContent As ContentManager = ContentPackManager.GetContentManager(tSource.TexturePath, ".xnb,.png")
-        Dim resolution As Integer = ContentPackManager.GetTextureResolution(TexturePath & Name)
+            Dim cContent As ContentManager = ContentPackManager.GetContentManager(tSource.TexturePath, ".xnb,.png")
+            Dim resolution As Integer = ContentPackManager.GetTextureResolution(TexturePath & Name)
 
-        Dim tKey As String = cContent.RootDirectory & "\" & TexturePath & Name & "," & r.X & "," & r.Y & "," & r.Width & "," & r.Height & "," & resolution
-        If TextureList.ContainsKey(tKey) = False Then
-            Dim t As Texture2D = Nothing
-            Dim doApplyEffect As Boolean = True
+            Dim tKey As String = cContent.RootDirectory & "\" & TexturePath & Name & "," & r.X & "," & r.Y & "," & r.Width & "," & r.Height & "," & resolution
+            If TextureList.ContainsKey(tKey) = False Then
+                Dim t As Texture2D = Nothing
+                Dim doApplyEffect As Boolean = True
 
-            If TextureList.ContainsKey(cContent.RootDirectory & "\" & TexturePath & Name) = True Then
-                t = TextureList(cContent.RootDirectory & "\" & TexturePath & Name)
-                doApplyEffect = False
-            Else
-                If System.IO.File.Exists(GameController.GamePath & "\" & cContent.RootDirectory & "\" & tSource.TexturePath & ".xnb") = False Then
-                    If System.IO.File.Exists(GameController.GamePath & "\" & cContent.RootDirectory & "\" & tSource.TexturePath & ".png") = True Then
-                        Using stream As System.IO.Stream = System.IO.File.Open(GameController.GamePath & "\" & cContent.RootDirectory & "\" & tSource.TexturePath & ".png", IO.FileMode.OpenOrCreate)
-                            Try
-                                t = Texture2D.FromStream(Core.GraphicsDevice, stream)
-                            Catch ex As Exception
-                                Logger.Log(Logger.LogTypes.ErrorMessage, "Something went wrong while XNA tried to load a texture. Return default.")
-                                Return DefaultTexture
-                            End Try
-                        End Using
-                    Else
-                        Logger.Log(Logger.LogTypes.ErrorMessage, "Texures.vb: Texture """ & GameController.GamePath & "\" & cContent.RootDirectory & "\" & Name & """ was not found!")
-                        Return DefaultTexture
-                    End If
+                If TextureList.ContainsKey(cContent.RootDirectory & "\" & TexturePath & Name) = True Then
+                    t = TextureList(cContent.RootDirectory & "\" & TexturePath & Name)
+                    doApplyEffect = False
                 Else
-                    t = cContent.Load(Of Texture2D)(tSource.TexturePath)
+                    If System.IO.File.Exists(GameController.GamePath & "\" & cContent.RootDirectory & "\" & tSource.TexturePath & ".xnb") = False Then
+                        If System.IO.File.Exists(GameController.GamePath & "\" & cContent.RootDirectory & "\" & tSource.TexturePath & ".png") = True Then
+                            Using stream As System.IO.Stream = System.IO.File.Open(GameController.GamePath & "\" & cContent.RootDirectory & "\" & tSource.TexturePath & ".png", IO.FileMode.OpenOrCreate)
+                                Try
+                                    t = Texture2D.FromStream(Core.GraphicsDevice, stream)
+                                Catch ex As Exception
+                                    Logger.Log(Logger.LogTypes.ErrorMessage, "Something went wrong while XNA tried to load a texture. Return default.")
+                                    Return DefaultTexture
+                                End Try
+                            End Using
+                        Else
+                            Logger.Log(Logger.LogTypes.ErrorMessage, "Texures.vb: Texture """ & GameController.GamePath & "\" & cContent.RootDirectory & "\" & Name & """ was not found!")
+                            Return DefaultTexture
+                        End If
+                    Else
+                        t = cContent.Load(Of Texture2D)(tSource.TexturePath)
+                    End If
+
+                    TextureList.Add(cContent.RootDirectory & "\" & TexturePath & Name, ApplyEffect(t.Copy()))
                 End If
 
-                TextureList.Add(cContent.RootDirectory & "\" & TexturePath & Name, ApplyEffect(t.Copy()))
+                If doApplyEffect = True Then
+                    If TextureList.ContainsKey(tKey) = False Then TextureList.Add(tKey, ApplyEffect(TextureRectangle(t, tSource.TextureRectangle, resolution)))
+                Else
+                    If TextureList.ContainsKey(tKey) = False Then TextureList.Add(tKey, TextureRectangle(t, tSource.TextureRectangle, resolution))
+                End If
+
+                cContent.Unload()
             End If
 
-            If doApplyEffect = True Then
-                If TextureList.ContainsKey(tKey) = False Then TextureList.Add(tKey, ApplyEffect(TextureRectangle(t, tSource.TextureRectangle, resolution)))
-            Else
-                If TextureList.ContainsKey(tKey) = False Then TextureList.Add(tKey, TextureRectangle(t, tSource.TextureRectangle, resolution))
-            End If
-
-            cContent.Unload()
-        End If
-
-        Return TextureList(tKey)
+            Return TextureList(tKey)
+        End SyncLock
     End Function
 
     ''' <summary>
@@ -130,16 +136,18 @@ Public Class TextureManager
     End Function
 
     Public Shared Function GetTexture(ByVal Texture As Texture2D, ByVal Rectangle As Rectangle, Optional ByVal Factor As Integer = 1) As Texture2D
-        Dim tex As Texture2D
+        SyncLock lock
+            Dim tex As Texture2D = Nothing
         
-        If TextureRectList.TryGetValue(New KeyValuePair(Of Int32, Rectangle)(Texture.GetHashCode(), Rectangle), tex) then
+            If TextureRectList.TryGetValue(New KeyValuePair(Of Int32, Rectangle)(Texture.GetHashCode(), Rectangle), tex) then
+                Return tex
+            End If
+
+            tex = TextureRectangle(Texture, Rectangle, Factor)
+            TextureRectList.Add(New KeyValuePair(Of Integer, Rectangle)(Texture.GetHashCode(), Rectangle), tex)
+
             Return tex
-        End If
-
-        tex = TextureRectangle(Texture, Rectangle, Factor)
-        TextureRectList.Add(New KeyValuePair(Of Integer, Rectangle)(Texture.GetHashCode(), Rectangle), tex)
-
-        Return tex
+        End SyncLock
     End Function
 
     Private Shared Function TextureRectangle(ByVal Texture As Texture2D, ByVal Rectangle As Rectangle, Optional ByVal Factor As Integer = 1) As Texture2D
