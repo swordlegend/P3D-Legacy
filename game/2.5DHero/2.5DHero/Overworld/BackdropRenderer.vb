@@ -153,6 +153,7 @@
             End Select
         End Sub
 
+        Dim vBuffer As VertexBuffer
         Public Sub Draw(ByVal Indicies As Short())
             Dim vBuffer As New VertexBuffer(Core.GraphicsDevice, VertexPositionNormalTangentTexture.VertexDeclaration, _vertices.Count, BufferUsage.None)
             Dim iBuffer As New IndexBuffer(Core.GraphicsDevice, GetType(Short), Indicies.Count, BufferUsage.None)
@@ -172,9 +173,11 @@
                 pass.Apply()
                 GraphicsDevice.SetVertexBuffer(vBuffer)
                 GraphicsDevice.Indices = iBuffer
-                'GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _vertices.Count, 0, Indicies.Count)
                 GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _vertices.Count)
             Next
+
+            vBuffer.Dispose()
+            iBuffer.Dispose()
         End Sub
 
         Private Function GetDiffuseColor() As Vector4

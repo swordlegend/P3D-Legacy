@@ -81,7 +81,7 @@
             Screen.Level.Entities.Clear()
             Screen.Level.Floors.Clear()
             Screen.Level.Shaders.Clear()
-            'Screen.Level.BackdropRenderer.Clear()
+            Screen.Level.BackdropRenderer.Clear()
 
             Screen.Level.OffsetmapFloors.Clear()
             Screen.Level.OffsetmapEntities.Clear()
@@ -1109,9 +1109,9 @@
                 End If
         End Select
 
-        'If isTriggered = True Then
-        '    Screen.Level.BackdropRenderer.AddBackdrop(New BackdropRenderer.Backdrop(BackdropType, Position, Rotation, Width, Height, Texture))
-        'End If
+        If isTriggered = True Then
+            Screen.Level.BackdropRenderer.AddBackdrop(New BackdropRenderer.Backdrop(BackdropType, Position, Rotation, Width, Height, Texture))
+        End If
     End Sub
 
 #End Region
