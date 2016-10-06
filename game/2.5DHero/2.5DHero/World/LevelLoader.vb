@@ -81,7 +81,7 @@
             Screen.Level.Entities.Clear()
             Screen.Level.Floors.Clear()
             Screen.Level.Shaders.Clear()
-            Screen.Level.BackdropRenderer.Clear()
+            'Screen.Level.BackdropRenderer.Clear()
 
             Screen.Level.OffsetmapFloors.Clear()
             Screen.Level.OffsetmapEntities.Clear()
